@@ -1,0 +1,47 @@
+INFO: 2025-06-19 09:35:24,229: Language: en
+INFO: 2025-06-19 09:35:24,231: Assuming root path: C:\Users\makho\PycharmProjects\tina4-python\tina4_python\tests\unit\auth, library path: C:\Users\makho\PycharmProjects\tina4-python\tina4_python
+DEBUG: 2025-06-19 09:35:24,355: TEST TOKEN eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVGluYTQiLCJleHBpcmVzIjoiMjAyNS0wNi0xOVQwOTozNzoyNC4zNTM4MTkifQ.r-fKrMkbXCPw9CFn5EZ4u_Jo4dKCL0yCE0NraZOqJi6dlxyg0hX2n4DdkLlBNCBmM_n-ZVG8o0pg3Ic7lmSbf4LsgS-0fG1b0oIgWtYU2I98K4a1GXj1TlCFYfvr6F3GK4GyFlIrbq_bAMOZNDlBkalPPw0ePMw3Wexgs8PvXMpdzME4uXvgG8FF4JnK-ZsNwslFnBlCKMx49mXOGhhFu34RpIOYavhEJutMopvT1GcvR1CWaGbYVXo1w-Rk3yeAc54dnLfta9Zw6yUya2cudh0lzkHvRI-Qevd_p8qtrJLP95x1wpESQEWbswOol7QVVO-IL6nvlCQv2p3_t8fbzg
+DEBUG: 2025-06-19 09:35:24,358: VALID TOKEN False
+DEBUG: 2025-06-19 09:35:24,358: VALID TOKEN True
+DEBUG: 2025-06-19 09:35:24,359: PAYLOAD {'name': 'Tina4', 'expires': '2025-06-19T09:37:24.353819'}
+DEBUG: 2025-06-19 09:35:24,728: DATABASE: sqlite3 None None test2.db username
+INFO: 2025-06-19 09:35:24,739: [0;93m Migration:  Found  C:\Users\makho\PycharmProjects\tina4-python\migrations [0m
+INFO: 2025-06-19 09:35:24,740: [0;93m Migration:  Checking file __test_user.sql [0m
+INFO: 2025-06-19 09:35:24,741: [0;93m Migration:  Running migration for __test_user.sql [0m
+INFO: 2025-06-19 09:35:24,748: [0;93m Migration: [0m [0;92mPASSED running migration for __test_user.sql [0m
+INFO: 2025-06-19 09:35:24,758: [0;93m Migration:  Checking file __test_user_item.sql [0m
+INFO: 2025-06-19 09:35:24,760: [0;93m Migration:  Running migration for __test_user_item.sql [0m
+INFO: 2025-06-19 09:35:24,771: [0;93m Migration: [0m [0;92mPASSED running migration for __test_user_item.sql [0m
+INFO: 2025-06-19 09:35:24,777: Initializing ORM
+INFO: 2025-06-19 09:35:24,778: from src.orm.Log import Log
+INFO: 2025-06-19 09:35:24,779: from src.orm.User import User
+DEBUG: 2025-06-19 09:35:24,780: Adding a route: /some/page
+DEBUG: 2025-06-19 09:35:24,780: Adding a route: /some/page
+DEBUG: 2025-06-19 09:35:24,781: Adding a route: /hello/{name}
+DEBUG: 2025-06-19 09:35:24,782: Adding a route: /hello/{name}
+DEBUG: 2025-06-19 09:35:24,783: Adding a route: /upload/files
+DEBUG: 2025-06-19 09:35:24,783: Adding a route: /system/roles
+DEBUG: 2025-06-19 09:35:24,784: Adding a route: /session/set
+DEBUG: 2025-06-19 09:35:24,786: Adding a route: /session/get
+DEBUG: 2025-06-19 09:35:24,787: Adding a route: /system/roles/data
+DEBUG: 2025-06-19 09:35:24,788: Adding a route: /system/roles/{id}
+DEBUG: 2025-06-19 09:35:24,788: Adding a route: /test/redirect
+DEBUG: 2025-06-19 09:35:24,789: Adding a route: /
+DEBUG: 2025-06-19 09:35:24,790: Adding a route: /test/vars
+DEBUG: 2025-06-19 09:35:24,811: Adding a route: /queue/add
+DEBUG: 2025-06-19 09:35:24,812: Adding a route: /websocket
+INFO: 2025-06-19 09:35:24,814: Initializing rabbitmq generate
+ERROR: 2025-06-19 09:35:28,944: Failed to import rabbitmq module, try pip install pika or poetry add pika cannot access local variable 'connection' where it is not associated with a value
+INFO: 2025-06-19 09:35:28,945: Initializing rabbitmq result
+ERROR: 2025-06-19 09:35:33,018: Failed to import rabbitmq module, try pip install pika or poetry add pika cannot access local variable 'connection' where it is not associated with a value
+DEBUG: 2025-06-19 09:35:33,020: Adding a route: /api/generate
+INFO: 2025-06-19 09:35:33,021: Initializing rabbitmq generate
+INFO: 2025-06-19 09:35:33,021: Initializing rabbitmq generate
+DEBUG: 2025-06-19 09:35:33,022: Adding a route: /api/generate/{message_id}
+DEBUG: 2025-06-19 09:35:33,024: Compiling scss
+DEBUG: 2025-06-19 09:35:33,031: Adding a route: /swagger/swagger.json
+DEBUG: 2025-06-19 09:35:33,032: Adding a route: /swagger
+INFO: 2025-06-19 09:35:33,033: Jurigged enabled
+WARNING: 2025-06-19 09:35:33,044: Not running webserver invalid literal for int() with base 10: ''
+ERROR: 2025-06-19 09:35:37,196: Failed to import rabbitmq module, try pip install pika or poetry add pika cannot access local variable 'connection' where it is not associated with a value
+INFO: 2025-06-19 09:35:37,196: Consuming [<tina4_python.Queue.Queue object at 0x0000020438C002F0>]
