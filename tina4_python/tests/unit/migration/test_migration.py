@@ -1,167 +1,111 @@
 import os
-import sys
 import pytest
-from unittest.mock import patch, MagicMock, call
+import sqlite3
 from pathlib import Path
+from tina4_python.Database import Database
 from tina4_python.Migration import migrate
-from tina4_python.Database import MSSQL, POSTGRES, FIREBIRD, MYSQL
 
 
-def create_migration_file(tmpdir, filename, content):
-    migrations_dir = tmpdir / "migrations"
-    migrations_dir.mkdir(parents=True, exist_ok=True)
-    file_path = migrations_dir / filename
-    file_path.write_text(content)
-    return migrations_dir
+@pytest.fixture(autouse=True)
+def setup_db(tmp_path, monkeypatch):
+    # Set root path for migrations
+    monkeypatch.setattr('tina4_python.root_path', str(tmp_path))
+
+    # Create fresh database
+    db_file = tmp_path / "test.db"
+    dba = Database(f"sqlite3:{db_file}")
+
+    # Create migrations directory
+    migrations_dir = tmp_path / "migrations"
+    migrations_dir.mkdir(exist_ok=True)
+
+    # Store paths in dba for test access
+    dba.test_root = tmp_path
+    dba.migrations_dir = migrations_dir
+
+    yield dba
+
+    # Clean up
+    dba.close()
 
 
-class MockResult:
-    def __init__(self, error=None):
-        self.error = error
+def test_successful_migration(setup_db):
+    dba = setup_db
+    # Create valid migration
+    (dba.migrations_dir / "001_valid.sql").write_text("CREATE TABLE test_mig (id INTEGER);")
+
+    # Run migration
+    migrate(dba)
+
+    # Verify table was created
+    tables = dba.fetch("SELECT name FROM sqlite_master WHERE type='table'").to_array()
+    assert any(t["name"] == "test_mig" for t in tables), f"Tables found: {tables}"
 
 
-@pytest.fixture
-def fake_dba():
-    dba = MagicMock()
-    dba.database_engine = "sqlite3"
-    dba.table_exists.return_value = False
-    dba.get_next_id.return_value = 1
-    dba.execute.return_value = MockResult()
-    dba.fetch.return_value = []
-    dba.commit = MagicMock()
-    dba.rollback = MagicMock()
-    return dba
+def test_migration_already_applied(setup_db):
+    dba = setup_db
+    # Create migration
+    (dba.migrations_dir / "001_repeat.sql").write_text("CREATE TABLE already_done (id INTEGER);")
+
+    # First run - should create table and record
+    migrate(dba)
+    first_count = len(dba.fetch("SELECT * FROM tina4_migration").to_array())
+
+    # Second run - should skip
+    migrate(dba)
+    second_count = len(dba.fetch("SELECT * FROM tina4_migration").to_array())
+
+    assert first_count == 1, "Migration not recorded"
+    assert second_count == 1, "Duplicate migration recorded"
 
 
-def test_generic_table_creation_sqlite(fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    create_migration_file(tmp_path, "001_init.sql", "CREATE TABLE test (id INTEGER);")
-    migrate(fake_dba)
-    fake_dba.execute.assert_called()
+
+def test_invalid_sql_fails_and_rolls_back(setup_db):
+    dba = setup_db
+    # Create invalid migration
+    (dba.migrations_dir / "001_invalid.sql").write_text("INVALID SQL;")
+
+    # Should raise database error
+    with pytest.raises(SystemExit):  # Changed from RuntimeError to SystemExit
+        migrate(dba)
+
+    # Verify a failed migration record was created
+    records = dba.fetch("SELECT * FROM tina4_migration").to_array()
+    assert len(records) == 1
+    assert records[0]["passed"] == 0
+    assert "syntax error" in records[0]["error_message"]
 
 
-def test_successful_migration(fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    create_migration_file(tmp_path, "001_success.sql", "CREATE TABLE test_mig (id INTEGER);")
+def test_partial_migration_failure(setup_db):
+    dba = setup_db
+    (dba.migrations_dir / "002_partial.sql").write_text(
+        "CREATE TABLE success (id INT);\nINVALID SQL;"
+    )
 
-    # Setup mock responses
-    fake_dba.fetch.side_effect = [
-        [],  # First check for existing migration
-        [{"max": 1}],  # get_next_id response
-        []  # Final insert check
-    ]
+    with pytest.raises(SystemExit):
+        migrate(dba)
 
-    # Setup execute responses
-    ok_result = MockResult()
-    fake_dba.execute.side_effect = [
-        ok_result,  # create tina4_migration table
-        ok_result,  # delete any failed migration record
-        ok_result,  # execute migration SQL
-        ok_result  # insert migration record
-    ]
+    # Verify failed migration record
+    records = dba.fetch("SELECT * FROM tina4_migration").to_array()
+    assert len(records) == 1
+    assert records[0]["passed"] == 0
 
-    # Reset commit mock
-    fake_dba.commit.reset_mock()
+    # Verify table WAS created (DDL can't be rolled back in SQLite)
+    assert any(
+        t["name"] == "success"
+        for t in dba.fetch("SELECT name FROM sqlite_master WHERE type='table'").to_array()
+    )
 
-    migrate(fake_dba)
-
-    # Verify commit was called at least twice (after delete and after insert)
-    assert fake_dba.commit.call_count >= 2
+def test_missing_migration_folder(setup_db):
+    dba = setup_db
+    # Test non-existent folder
+    with pytest.raises(FileNotFoundError):
+        migrate(dba, migration_folder="nonexistent_folder")
 
 
-def test_empty_migration_folder(fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    (tmp_path / "migrations").mkdir()
-    migrate(fake_dba)
-    assert True  # no crash
-
-
-def test_migration_already_applied(fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    create_migration_file(tmp_path, "001_repeat.sql", "CREATE TABLE already_done (id INTEGER);")
-
-    # Mock response showing migration already applied
-    fake_dba.fetch.return_value = [{"description": "001_repeat.sql", "passed": 1}]
-
-    # Reset fetch mock to track calls
-    fake_dba.fetch.reset_mock()
-
-    migrate(fake_dba)
-
-    # Verify fetch was called to check migration status
-    assert fake_dba.fetch.call_count >= 1
-
-
-def test_invalid_sql_fails_and_rolls_back(fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    create_migration_file(tmp_path, "001_invalid.sql", "INVALID SQL SYNTAX;")
-
-    # Setup mocks
-    fake_dba.table_exists.return_value = True
-    fake_dba.fetch.side_effect = [
-        [],  # First check for existing migration
-        [{"max": 1}]  # get_next_id response
-    ]
-
-    # First two calls succeed, third fails
-    fake_dba.execute.side_effect = [
-        MockResult(),  # create table if not exists
-        MockResult(),  # delete existing failed migration
-        MockResult(error="Syntax error")  # execute migration (fails)
-    ]
-
-    # Reset rollback mock
-    fake_dba.rollback.reset_mock()
-
-    with patch("sys.exit") as mock_exit:
-        migrate(fake_dba)
-        assert fake_dba.rollback.call_count >= 1
-        mock_exit.assert_called_once()
-
-
-def test_partial_migration_failure(fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    create_migration_file(tmp_path, "002_partial_fail.sql", "CREATE TABLE ok (id INT); INVALID SQL;")
-
-    # Setup mocks
-    fake_dba.table_exists.return_value = True
-    fake_dba.fetch.side_effect = [
-        [],  # First check for existing migration
-        [{"max": 1}]  # get_next_id response
-    ]
-
-    # First three calls succeed, fourth fails
-    fake_dba.execute.side_effect = [
-        MockResult(),  # create table if not exists
-        MockResult(),  # delete existing failed migration
-        MockResult(),  # first valid statement
-        MockResult(error="SQL error")  # second invalid statement
-    ]
-
-    # Reset rollback mock
-    fake_dba.rollback.reset_mock()
-
-    with patch("sys.exit") as mock_exit:
-        migrate(fake_dba)
-        assert fake_dba.rollback.call_count >= 1
-        mock_exit.assert_called_once()
-
-
-def test_missing_migration_folder(fake_dba, tmp_path):
-    bad_folder = tmp_path / "nonexistent"
-    with patch("tina4_python.root_path", str(tmp_path)), patch("sys.exit") as mock_exit:
-        migrate(fake_dba, migration_folder="nonexistent")
-        mock_exit.assert_called_once()
-
-
-@pytest.mark.parametrize("engine", [MSSQL, POSTGRES, MYSQL, FIREBIRD])
-def test_engine_table_creation(engine, fake_dba, tmp_path):
-    os.environ["TINA4_ROOT_PATH"] = str(tmp_path)
-    fake_dba.database_engine = engine
-    fake_dba.fetch.side_effect = [
-        [],
-        [{"max": 1}]
-    ]
-    create_migration_file(tmp_path, "init.sql", "CREATE TABLE something (id INT);")
-    migrate(fake_dba)
-    fake_dba.execute.assert_called()
+def test_empty_migration_folder(setup_db):
+    dba = setup_db
+    # Should run without errors
+    migrate(dba)
+    # Verify no migrations were run
+    assert len(dba.fetch("SELECT * FROM tina4_migration").to_array()) == 0
