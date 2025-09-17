@@ -1,0 +1,11 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: tina4_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"

@@ -1,0 +1,10 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tina4_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: test_db
+    ports:
+      - "3307:3306"

@@ -8,7 +8,7 @@
 
 Comprehensive unit tests for the `Database.py` module, covering:
 
-- SQLite and MySQL database connections
+- SQLite (always enabled) and MySQL, PostgreSQL, Firebird, and MSSQL backends
 - Table creation and existence checking
 - Insert, update, delete operations (with edge cases)
 - Query execution (`fetch`, `fetch_one`, `execute`, `execute_many`)
@@ -23,7 +23,7 @@ Comprehensive unit tests for the `Database.py` module, covering:
 | ID        | Test Method                                 | Description                             | Key Assertions                          |
 |-----------|---------------------------------------------|-----------------------------------------|-----------------------------------------|
 | DBMAIN-001 | `test_DBMAIN_001_sqlite_connection`         | SQLite driver and connection init       | Engine type, dba instance                |
-| DBMAIN-002 | `test_DBMAIN_002_mysql_connection`          | MySQL connection handling               | Driver load and connection success       |
+| DBMAIN-002 | `test_DBMAIN_002_mysql_connection`          | MySQL connection handling *(skipped if driver missing)* | Driver load and connection success       |
 | DBMAIN-003 | `test_DBMAIN_003_table_exists_true`         | Detects existing table                  | Returns `True`                          |
 | DBMAIN-004 | `test_DBMAIN_004_fetch_records`             | Multi-record SQL fetch                  | Result count, record structure          |
 | DBMAIN-005 | `test_DBMAIN_005_fetch_one_record`          | Single record fetch                     | Exact value match                       |
@@ -50,6 +50,31 @@ Comprehensive unit tests for the `Database.py` module, covering:
 
 ---
 
+##  Database Backends
+
+The test suite supports multiple backends. If the required Python driver is **not installed**, tests are **skipped gracefully**.
+
+| Backend   | Driver Module         | Install Command                           | Default Status |
+|-----------|-----------------------|-------------------------------------------|---------------|
+| SQLite    | `sqlite3` (builtin)  | *(preinstalled with Python)*               |  Always runs |
+| MySQL     | `mysql.connector`    | `pip install mysql-connector-python`       | ️ Skipped if missing |
+| Postgres  | `psycopg2`           | `pip install psycopg2-binary`              |  Skipped if missing |
+| Firebird  | `fdb`                | `pip install fdb`                          |  Skipped if missing |
+| MSSQL     | `pymssql`            | `pip install pymssql`                      |  Skipped if missing |
+
+---
+
+##  Getting Started
+
+### 1. Environment Setup
+
+```bash
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate      # Linux/Mac
+.\.venv\Scripts\activate       # Windows
+
+
 ##  Getting Started
 
 ### 1. Environment Setup
@@ -64,9 +89,14 @@ source .venv/bin/activate      # Linux/Mac
 ### 2. Install Dependencies
 
 ```bash
-pip install pytest mysql-connector-python
+uv pip install pytest mysql-connector-python
 ```
 Additional drivers (e.g., psycopg2, pymssql) can be added if extending test coverage.
+
+```bash
+uv pip install pytest mysql-connector-python psycopg2-binary pymssql fdb
+
+```
 
 ### 2. Running Tests
 
@@ -95,17 +125,6 @@ Run a Specific Test
 pytest tina4_python/tests/units/database/test_database.py::test_DBMAIN_010_data_type_conversion_datetime -v
 ```
 
-Optional: MySQL Docker Setup (for DBMAIN-002)
-```bash
-pytest tina4_python/tests/units/database/test_database.py::test_DBMAIN_010_data_type_conversion_datetime -v
-```
-- Host: `localhost`
-- Port: `33066`
-- User: `root`
-- Password: `secret`
-- Database: `test`
-
-The test will skip if the connection fails.
 
 ### Fixtures Overview
 

@@ -19,6 +19,8 @@ dependencies = [
     "simple-websocket (>=1.1.0,<2.0.0)",
     "hypercorn (>=0.17.3,<0.18.0)",
     "asyncer>=0.0.8",
+    "psycopg2-binary>=2.9.10",
+    "firebird-driver>=2.0.2",
 ]
 
 [dependency-groups]

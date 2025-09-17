@@ -160,3 +160,14 @@ def test_DBMAIN_024_get_next_id_empty_table(db):
     db.execute("DELETE FROM next_id_test")
     db.commit()
     assert db.get_next_id("next_id_test") == 1
+
+
+
+# DBMAIN-025: check_connected on closed connection
+def test_DBMAIN_025_check_connected_on_closed_connection():
+    temp_db = Database("mysql.connector:localhost/3307:test_db", "root", "secret")
+    temp_db.close()
+    try:
+        temp_db.check_connected()
+    except Exception:
+        pytest.fail("check_connected should not throw on closed connection")

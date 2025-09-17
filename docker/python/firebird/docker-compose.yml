@@ -1,0 +1,10 @@
+services:
+  firebird:
+    image: firebirdsql/firebird
+    environment:
+      - FIREBIRD_USER=SYSDBA
+      - FIREBIRD_PASSWORD=masterkey
+      - FIREBIRD_DATABASE=testdb.fdb
+    ports:
+      - "3050:3050"
+    profiles: ["firebird"]

@@ -7,3 +7,6 @@ POSTGRES = "psycopg2"
 POSTGRES_INSTALL = "pip install psycopg2-binary or poetry add psycopg2-binary"
 MSSQL = "pymssql"
 MSSQL_INSTALL = "pip install pymssql or poetry add pymssql"
+
+
+
