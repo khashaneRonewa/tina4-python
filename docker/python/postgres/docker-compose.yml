@@ -9,3 +9,5 @@ services:
       POSTGRES_PASSWORD: secret
     ports:
       - "5432:5432"
+
+   # profiles: ["postgres"]

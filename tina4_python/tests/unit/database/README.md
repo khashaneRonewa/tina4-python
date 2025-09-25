@@ -64,6 +64,8 @@ The test suite supports multiple backends. If the required Python driver is **no
 
 ---
 
+
+
 ##  Getting Started
 
 ### 1. Environment Setup
@@ -88,50 +90,101 @@ source .venv/bin/activate      # Linux/Mac
 
 ### 2. Install Dependencies
 
-```bash
-uv pip install pytest mysql-connector-python
-```
-Additional drivers (e.g., psycopg2, pymssql) can be added if extending test coverage.
 
 ```bash
 uv pip install pytest mysql-connector-python psycopg2-binary pymssql fdb
 
 ```
 
-### 2. Running Tests
+### 3. Running Database Servers (Docker)
+MySQL
 
-Basic run
 ```bash
-pytest tina4_python/tests/units/database/test_database.py
+cd docker/python/mysql
+docker compose up -d
+docker ps
 ```
-Verbose Output
-```bash
-pytest tina4_python/tests/units/database/test_database.py -v
-```
+- Port: 3307
+- User/Password: root / secret123!
+- Database: testdb
 
-With Coverage Report
+Postgres
 ```bash
-# Terminal output
+cd docker/python/postgres
+docker compose up -d
+docker ps
+
+```
+- Port: 5432 
+- User/Password: postgres / secret123!
+- Database: testdb
+
+Firebird
+```bash
+cd docker/python/firebird
+docker compose up -d
+docker ps
+
+````
+- Port: 3050 
+- User/Password: SYSDBA / masterkey 
+- Database: testdb.fdb
+
+MSSQL
+
+```bash
+cd docker/python/mssql
+docker compose up -d
+docker ps
+````
+
+- Port: 1433 
+- User/Password: sa / secret123!
+- Database: test_db
+
+Tip: Stop other DB containers if running, to focus on one system at a time:
+```bash
+docker stop <container_name>
+```
+4. Running Tests
+
+All Tests
+```bash
+pytest tina4_python/tests/unit/database/ -v
+````
+Specific Database
+```bash
+pytest tina4_python/tests/unit/database/test_mysql.py -v
+pytest tina4_python/tests/unit/database/test_postgres.py -v
+pytest tina4_python/tests/unit/database/test_firebird.py -v
+pytest tina4_python/tests/unit/database/test_mssql.py -v
+pytest tina4_python/tests/unit/database/test_sqlite.py -v
+````
+Coverage Report
+# Terminal
+```bash
 pytest --cov=tina4_python/Database --cov-report=term-missing
 ```
-```bash
-# HTML report
-pytest --cov=tina4_python/Database --cov-report=html
-open htmlcov/index.html
-```
 
-Run a Specific Test
-```bash
-pytest tina4_python/tests/units/database/test_database.py::test_DBMAIN_010_data_type_conversion_datetime -v
-```
-
-
-### Fixtures Overview
-
+5. Fixtures Overview
+6. 
 ```python
 @pytest.fixture(scope="module")
 def db():
-    return Database("sqlite3:test_db_unit.db")  # Default test DB
+    # Example for SQLite
+    return Database("sqlite3:test_db_unit.db")
+
+    # Example for MySQL
+    # return Database("mysql:localhost/3307:testdb", "root", "secret123!")
+
+    # Example for Postgres
+    # return Database("psycopg2:localhost/5432:testdb", "postgres", "secret123!")
+
+    # Example for Firebird
+    # return Database("fdb:localhost/3050:/var/lib/firebird/data/testdb.fdb", "SYSDBA", "masterkey")
+
+    # Example for MSSQL
+    # return Database("pymssql:localhost/1433:test_db", "sa", "secret123!")
 ```
 
 ### Troubleshooting

@@ -8,3 +8,5 @@ services:
       MYSQL_DATABASE: test_db
     ports:
       - "3307:3306"
+
+   # profiles: ["mysql"]

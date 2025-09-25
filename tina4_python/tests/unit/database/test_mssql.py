@@ -6,23 +6,37 @@ from tina4_python.DatabaseTypes import MSSQL
 
 
 @pytest.fixture(scope="module")
-def db():
-    # Ensure test_db exists
-    with pymssql.connect(server="localhost", port=1433, user="sa", password="secret123!", database="master") as conn:
-        cursor = conn.cursor()
-        cursor.execute("IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'test_db') CREATE DATABASE test_db;")
-        conn.commit()
 
-    # Now connect through Tina4 Database wrapper
+def db():
+    # Connect to master with autocommit=True
+    with pymssql.connect(
+        server="localhost",
+        port=1433,
+        user="sa",
+        password="secret123!",
+        database="master",
+        autocommit=True  # <-- key
+    ) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'test_db')
+                CREATE DATABASE test_db;
+        """)
+
+    # Now connect through Tina4 Database wrapper to test_db
     db = Database("pymssql:localhost/1433:test_db", "sa", "secret123!")
 
     # Ensure test tables exist with IDENTITY
     db.execute("""
-        IF OBJECT_ID('test_fetch', 'U') IS NULL CREATE TABLE test_fetch (id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(100)); """)
-    db.execute("""IF OBJECT_ID('next_id_test', 'U') IS NULL  CREATE TABLE next_id_test (id INT IDENTITY(1,1) PRIMARY KEY);""")
+        IF OBJECT_ID('test_fetch', 'U') IS NULL 
+            CREATE TABLE test_fetch (id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(100));
+    """)
+    db.execute("""
+        IF OBJECT_ID('next_id_test', 'U') IS NULL  
+            CREATE TABLE next_id_test (id INT IDENTITY(1,1) PRIMARY KEY);
+    """)
     db.commit()
     return db
-
 # DBMAIN-001: MSSQL connection
 def test_DBMAIN_001_mssql_connection(db):
     assert db.database_engine == MSSQL

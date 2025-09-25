@@ -8,3 +8,4 @@ services:
       SA_PASSWORD: "secret123!"
     ports:
       - "1433:1433"
+   # profiles: ["mssql"]
